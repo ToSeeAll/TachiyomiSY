@@ -274,7 +274,7 @@ private fun Modifier.predictiveBackAnimation(
     onBack: () -> Unit,
 ) = composed {
     var scale by remember { mutableFloatStateOf(1f) }
-    PredictiveBackHandler(enabled = enabled) { progress ->
+    PredictiveBackHandler(enabled = false) { progress ->
         try {
             progress.collect { backEvent ->
                 scale = lerp(1f, 0.85f, PredictiveBack.transform(backEvent.progress))

@@ -228,7 +228,7 @@ fun ScreenTransition(
         }
     }
 
-    PredictiveBackHandler(enabled = navigator.canPop) { backEvent ->
+    PredictiveBackHandler(enabled = false) { backEvent ->
         state.cancelCancelAnimation()
         var startOffset: Offset? = null
         backEvent
