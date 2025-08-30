@@ -523,6 +523,7 @@ object SettingsDataScreen : SearchableSettings {
                             SyncManager.SyncService.NONE.value to stringResource(MR.strings.off),
                             SyncManager.SyncService.SYNCYOMI.value to stringResource(SYMR.strings.syncyomi),
                             SyncManager.SyncService.GOOGLE_DRIVE.value to stringResource(SYMR.strings.google_drive),
+                            SyncManager.SyncService.WEBDAV.value to stringResource(SYMR.strings.web_dav),
                         ),
                         onValueChanged = { true },
                     ),
@@ -554,6 +555,7 @@ object SettingsDataScreen : SearchableSettings {
             SyncManager.SyncService.NONE -> emptyList()
             SyncManager.SyncService.SYNCYOMI -> getSelfHostPreferences(syncPreferences)
             SyncManager.SyncService.GOOGLE_DRIVE -> getGoogleDrivePreferences()
+            SyncManager.SyncService.WEBDAV -> getWebDAVPreferences(syncPreferences)
         }
 
         return if (syncServiceType != SyncManager.SyncService.NONE) {
@@ -780,6 +782,52 @@ object SettingsDataScreen : SearchableSettings {
                 Preference.PreferenceItem.InfoPreference(
                     stringResource(SYMR.strings.last_synchronization, relativeTimeSpanString(lastSync)),
                 ),
+            ),
+        )
+    }
+    // SY <--
+
+
+    @Composable
+    private fun getWebDAVPreferences(syncPreferences: SyncPreferences): List<Preference> {
+        val scope = rememberCoroutineScope()
+
+        return listOf(
+            Preference.PreferenceItem.EditTextPreference(
+                title = stringResource(SYMR.strings.pref_web_dav_server_url),
+                subtitle = stringResource(SYMR.strings.pref_web_dav_server_url_summ),
+                preference = syncPreferences.webDavServerUrl(),
+                onValueChanged = { newValue ->
+                    scope.launch {
+                        val trimmedValue = newValue.trim()
+                        val modifiedValue = trimmedValue.trimEnd { it == '/' }
+                        syncPreferences.webDavServerUrl().set(modifiedValue)
+                    }
+                    true
+                },
+            ),
+            Preference.PreferenceItem.EditTextPreference(
+                title = stringResource(SYMR.strings.pref_web_dav_username),
+                subtitle = stringResource(SYMR.strings.pref_web_dav_username_summ),
+                preference = syncPreferences.webDavUsername(),
+                onValueChanged = { newValue ->
+                    scope.launch {
+                        syncPreferences.webDavUsername().set(newValue.trim())
+                    }
+                    true
+                },
+            ),
+            Preference.PreferenceItem.EditTextPreference(
+                title = stringResource(SYMR.strings.pref_web_dav_password),
+                subtitle = stringResource(SYMR.strings.pref_web_dav_password_summ),
+                preference = syncPreferences.webDavPassword(),
+                onValueChanged = { newValue ->
+                    scope.launch {
+                        syncPreferences.webDavPassword().set(newValue)
+                    }
+                    true
+                },
+//                isPassword = true,
             ),
         )
     }

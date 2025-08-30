@@ -8,7 +8,7 @@ plugins {
     id("mihon.android.application")
     id("mihon.android.application.compose")
     kotlin("plugin.parcelize")
-    kotlin("plugin.serialization")
+    alias(kotlinx.plugins.serialization)
     // id("com.github.zellius.shortcut-helper")
     alias(libs.plugins.aboutLibraries)
     id("com.github.ben-manes.versions")
@@ -173,6 +173,8 @@ dependencies {
     implementation(projects.domain)
     implementation(projects.presentationCore)
     implementation(projects.presentationWidget)
+    // 添加WebDAV依赖
+    implementation("com.github.thegrizzlylabs:sardine-android:0.7")
 
     // Compose
     implementation(compose.activity)
@@ -196,6 +198,9 @@ dependencies {
     // SY <--
 
     implementation(kotlinx.reflect)
+    // 添加kotlinx.serialization依赖
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.6.3")
     implementation(kotlinx.immutables)
 
     implementation(platform(kotlinx.coroutines.bom))

@@ -28,6 +28,14 @@ class SyncPreferences(
         "",
     )
 
+    // WebDAV sync preferences
+    fun webDavServerUrl() = preferenceStore.getString("webdav_server_url", "")
+    fun webDavUsername() = preferenceStore.getString("webdav_username", "")
+    fun webDavPassword() = preferenceStore.getString(
+        Preference.appStateKey("webdav_password"),
+        "",
+    )
+
     fun uniqueDeviceID(): String {
         val uniqueIDPreference = preferenceStore.getString(Preference.appStateKey("unique_device_id"), "")
 

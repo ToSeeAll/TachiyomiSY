@@ -1,4 +1,5 @@
 [versions]
+kotlinx-serialization = "1.6.3"
 aboutlib_version = "12.1.2"
 leakcanary = "2.14"
 moko = "0.24.5"
@@ -13,6 +14,8 @@ firebase-bom = "33.13.0"
 markdown = "0.34.0"
 
 [libraries]
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-protobuf = { module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
 desugar = "com.android.tools:desugar_jdk_libs:2.1.5"
 android-shortcut-gradle = "com.github.zellius:android-shortcut-gradle-plugin:0.1.2"
 

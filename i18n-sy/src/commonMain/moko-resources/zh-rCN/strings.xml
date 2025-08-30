@@ -603,6 +603,14 @@
     <string name="google_drive_login_success">已登录谷歌云端硬盘</string>
     <string name="google_drive_login_failed">无法登录谷歌云端硬盘：%s</string>
     <string name="google_drive_not_signed_in">未登录谷歌云端硬盘</string>
+    <string name="web_dav">WebDAV</string>
+    <string name="webdav_not_configured">WebDAV 未正确配置。请检查您的设置。</string>
+    <string name="pref_web_dav_server_url">WebDAV 服务器 URL</string>
+    <string name="pref_web_dav_server_url_summ">输入 WebDAV 服务器 URL</string>
+    <string name="pref_web_dav_username">WebDAV 用户名</string>
+    <string name="pref_web_dav_username_summ">输入 WebDAV 用户名</string>
+    <string name="pref_web_dav_password">WebDAV 密码</string>
+    <string name="pref_web_dav_password_summ">输入 WebDAV 密码</string>
     <string name="error_uploading_sync_data">上传同步数据到谷歌云端硬盘时发生错误</string>
     <string name="error_before_sync_gdrive">同步前发生错误：%s</string>
     <string name="pref_purge_confirmation_title">清除前确认</string>
