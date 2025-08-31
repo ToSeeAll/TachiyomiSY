@@ -178,7 +178,7 @@ object HomeScreen : Screen() {
 
             var handlingBack by remember { mutableStateOf(false) }
             PredictiveBackHandler(
-                enabled = handlingBack || tabNavigator.current::class != LibraryTab::class,
+                enabled = false,
             ) { progress ->
                 handlingBack = true
                 val currentTab = tabNavigator.current

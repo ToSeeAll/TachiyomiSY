@@ -23,7 +23,7 @@ if (gradle.startParameter.taskRequests.toString().contains("Standard")) {
 
 // shortcutHelper.setFilePath("./shortcuts.xml")
 
-val supportedAbis = setOf("arm64-v8a")
+val supportedAbis = setOf("arm64-v8a","x86_64")
 
 android {
     namespace = "eu.kanade.tachiyomi"
@@ -31,8 +31,8 @@ android {
     defaultConfig {
         applicationId = "eu.kanade.tachiyomi.sy"
 
-        versionCode = 75
-        versionName = "1.12.0"
+        versionCode = 76
+        versionName = "1.12.1"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")

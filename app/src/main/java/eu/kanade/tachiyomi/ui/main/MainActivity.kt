@@ -178,7 +178,8 @@ class MainActivity : BaseActivity() {
 
         // SY -->
         @Suppress("KotlinConstantConditions")
-        val hasDebugOverlay = (BuildConfig.DEBUG || BuildConfig.BUILD_TYPE == "releaseTest")
+        // Only show debug overlay in releaseTest build type as per user request
+        val hasDebugOverlay = false
         // SY <--
 
         setComposeContent {

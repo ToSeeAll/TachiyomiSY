@@ -849,4 +849,9 @@
     <string name="library_exported">已导出列表</string>
     <string name="tracked_privately">私下记录</string>
     <string name="action_toggle_private_on">私下记录</string>
+
+    <string name="exit_multiple_selection">退出多选模式</string>
+    <string name="enter_multiple_selection">进入多选模式</string>
+    <string name="exclude_duplicate_manga">排除重复的</string>
+    <string name="confirm_add_duplicate_manga">确定添加重复的</string>
 </resources>

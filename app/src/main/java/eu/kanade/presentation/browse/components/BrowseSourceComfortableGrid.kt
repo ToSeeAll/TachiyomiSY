@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastAny
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import eu.kanade.presentation.library.components.CommonMangaItemDefaults
@@ -34,6 +35,7 @@ fun BrowseSourceComfortableGrid(
     contentPadding: PaddingValues,
     onMangaClick: (Manga) -> Unit,
     onMangaLongClick: (Manga) -> Unit,
+    selection:List<Manga>,
 ) {
     LazyVerticalGrid(
         columns = columns,
@@ -55,6 +57,7 @@ fun BrowseSourceComfortableGrid(
             // SY <--
 
             BrowseSourceComfortableGridItem(
+                isSelected=selection.fastAny{it.id == manga.id},
                 manga = manga,
                 // SY -->
                 metadata = metadata,
@@ -80,8 +83,10 @@ private fun BrowseSourceComfortableGridItem(
     // SY <--
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = onClick,
+    isSelected: Boolean = false,
 ) {
     MangaComfortableGridItem(
+        isSelected = isSelected,
         title = manga.title,
         coverData = MangaCover(
             mangaId = manga.id,
