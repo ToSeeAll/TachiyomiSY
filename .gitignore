@@ -2,7 +2,7 @@
 .gradle
 .kotlin
 build
-
+app/dev
 # IDE files
 *.iml
 .idea/*

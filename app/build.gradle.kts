@@ -29,7 +29,7 @@ android {
     namespace = "eu.kanade.tachiyomi"
 
     defaultConfig {
-        applicationId = "eu.kanade.tachiyomi.sy"
+        applicationId = "eu.kanade.tachiyomi.ty"
 
         versionCode = 76
         versionName = "1.12.1"
@@ -57,8 +57,9 @@ android {
     buildTypes {
         named("debug") {
             versionNameSuffix = "-${getCommitCount()}"
-            applicationIdSuffix = ".debug"
-            isPseudoLocalesEnabled = true
+//            applicationIdSuffix = ".debug"
+//            isMinifyEnabled = true
+//            isPseudoLocalesEnabled = true
         }
         create("releaseTest") {
             applicationIdSuffix = ".rt"
