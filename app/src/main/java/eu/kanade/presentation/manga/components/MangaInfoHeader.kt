@@ -35,6 +35,7 @@ import androidx.compose.material.icons.outlined.AttachMoney
 import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.CallMerge
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material.icons.outlined.DoneAll
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -172,6 +173,7 @@ fun MangaActionRow(
     onEditCategory: (() -> Unit)?,
     // SY -->
     onMergeClicked: (() -> Unit)?,
+    onDeleteArchivedClicked: () -> Unit,
     // SY <--
     modifier: Modifier = Modifier,
 ) {
@@ -242,6 +244,14 @@ fun MangaActionRow(
             )
         }
         // SY <--
+        //TY -->
+        MangaActionButton(
+            title = stringResource(MR.strings.delete_archived),
+            icon = Icons.Outlined.Delete,
+            color = defaultActionButtonColor,
+            onClick = onDeleteArchivedClicked,
+        )
+        //TY <--
     }
 }
 
@@ -265,7 +275,8 @@ fun ExpandableMangaDescription(
             mutableStateOf(defaultExpandState)
         }
         val desc =
-            description.takeIf { !it.isNullOrBlank() } ?: stringResource(MR.strings.description_placeholder)
+            description.takeIf { !it.isNullOrBlank() }
+                ?: stringResource(MR.strings.description_placeholder)
 
         MangaSummary(
             description = desc,
@@ -666,7 +677,8 @@ private fun MangaSummary(
                     modifier = Modifier.background(Brush.verticalGradient(colors = colors)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_caret_down)
+                    val image =
+                        AnimatedImageVector.animatedVectorResource(R.drawable.anim_caret_down)
                     Icon(
                         painter = rememberAnimatedVectorPainter(image, !expanded),
                         contentDescription = stringResource(

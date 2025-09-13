@@ -854,4 +854,6 @@
     <string name="enter_multiple_selection">进入多选模式</string>
     <string name="exclude_duplicate_manga">排除重复的</string>
     <string name="confirm_add_duplicate_manga">确定添加重复的</string>
+    <string name="delete_archived">删除存档</string>
+    <string name="delete_archived_from_lanrar">从云上删除存档</string>
 </resources>

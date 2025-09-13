@@ -1000,4 +1000,6 @@
     <string name="enter_multiple_selection">Enter selection mode</string>
     <string name="exclude_duplicate_manga">Exclude Duplicate</string>
     <string name="confirm_add_duplicate_manga">Confirm Add Duplicate</string>
+    <string name="delete_archived">Delete Archived</string>
+    <string name="delete_archived_from_lanrar">Delete Archived From Lanrar</string>
 </resources>
