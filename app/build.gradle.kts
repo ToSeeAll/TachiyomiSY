@@ -175,7 +175,7 @@ dependencies {
     implementation(projects.presentationCore)
     implementation(projects.presentationWidget)
     // 添加WebDAV依赖
-    implementation("com.github.thegrizzlylabs:sardine-android:0.7")
+//    implementation("com.github.thegrizzlylabs:sardine-android:0.7")
 
     // Compose
     implementation(compose.activity)
@@ -326,6 +326,23 @@ androidComponents {
         // Only excluding in standard flavor because this breaks
         // Layout Inspector's Compose tree
         it.packaging.resources.excludes.add("META-INF/*.version")
+    }
+}
+androidComponents {
+    // 同步阶段就把不想要的 variant 摘掉
+    beforeVariants { variantBuilder ->
+        val flavor = variantBuilder.productFlavors.singleOrNull()?.second
+        val buildType = variantBuilder.buildType
+
+        // 只保留 devRelease 和 standardRelease（即 release）
+        val keep = when {
+            flavor == "dev" && buildType == "release" -> true
+//            flavor == "standard" && buildType == "release" -> true
+            else -> false
+        }
+        if (!keep) {
+            variantBuilder.enable = false        // 关键：禁用该 variant
+        }
     }
 }
 

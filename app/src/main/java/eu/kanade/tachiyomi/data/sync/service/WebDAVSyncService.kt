@@ -1,30 +1,36 @@
 package eu.kanade.tachiyomi.data.sync.service
 
 import android.content.Context
-import com.thegrizzlylabs.sardineandroid.Sardine
-import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
 import eu.kanade.domain.sync.SyncPreferences
 import eu.kanade.tachiyomi.data.backup.models.Backup
+import eu.kanade.tachiyomi.network.GET
+import eu.kanade.tachiyomi.network.PUT
+import eu.kanade.tachiyomi.network.await
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
 import logcat.LogPriority
 import logcat.logcat
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.sy.SYMR
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.io.IOException
+import java.util.Base64
+import java.util.concurrent.TimeUnit
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
-class WebDAVSyncService(context: Context, json: Json, syncPreferences: SyncPreferences) : SyncService(
-    context,
-    json,
-    syncPreferences,
-) {
+class WebDAVSyncService(context: Context, json: Json, syncPreferences: SyncPreferences) :
+    SyncService(
+        context,
+        json,
+        syncPreferences,
+    ) {
     constructor(context: Context) : this(
         context,
         Json {
@@ -33,23 +39,51 @@ class WebDAVSyncService(context: Context, json: Json, syncPreferences: SyncPrefe
         },
         Injekt.get<SyncPreferences>(),
     )
+
     private val appName = context.stringResource(MR.strings.app_name)
     private val protoBuf: ProtoBuf = Injekt.get()
     private val remoteFileName = "${appName}_sync.proto.gz"
     private val deviceIdFileName = "${appName}_device_id.txt"
 
-    private fun getSardineClient(): Sardine {
-        val url = syncPreferences.webDavServerUrl().get()
+    private fun getOkHttpClient(): OkHttpClient {
         val username = syncPreferences.webDavUsername().get()
         val password = syncPreferences.webDavPassword().get()
 
-        if (url.isEmpty() || username.isEmpty() || password.isEmpty()) {
-            throw Exception(context.stringResource(SYMR.strings.webdav_not_configured))
+        // 设置超时时间
+        val builder = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+
+        // 添加基本身份验证
+        if (username.isNotEmpty() && password.isNotEmpty()) {
+            val credential = "$username:$password"
+            val encodedCredential = Base64.getEncoder().encodeToString(credential.toByteArray())
+            builder.addInterceptor {
+                val request = it.request().newBuilder()
+                    .header("Authorization", "Basic $encodedCredential")
+                    .build()
+                it.proceed(request)
+            }
         }
 
-        val sardine = OkHttpSardine()
-        sardine.setCredentials(username, password)
-        return sardine
+        return builder.build()
+    }
+
+    private suspend fun doesFileExist(url: String): Boolean {
+        val client = getOkHttpClient()
+        val request = Request.Builder()
+            .url(url)
+            .method("PROPFIND", null)
+            .header("Depth", "0")
+            .build()
+
+        return try {
+            val response = client.newCall(request).await()
+            response.isSuccessful
+        } catch (e: Exception) {
+            false
+        }
     }
 
     override suspend fun doSync(syncData: SyncData): Backup? {
@@ -86,52 +120,87 @@ class WebDAVSyncService(context: Context, json: Json, syncPreferences: SyncPrefe
         }
     }
 
-    private fun pullSyncData(): SyncData? {
-        val sardine = getSardineClient()
+    private suspend fun pullSyncData(): SyncData? {
         val baseUrl = syncPreferences.webDavServerUrl().get().trimEnd('/')
         val syncFileUrl = "$baseUrl/$remoteFileName"
         val deviceIdFileUrl = "$baseUrl/$deviceIdFileName"
 
+        if (baseUrl.isEmpty() || syncPreferences.webDavUsername().get()
+                .isEmpty() || syncPreferences.webDavPassword().get().isEmpty()
+        ) {
+            throw Exception(context.stringResource(SYMR.strings.webdav_not_configured))
+        }
+
         return try {
-            if (sardine.exists(syncFileUrl)) {
-                logcat(LogPriority.DEBUG, "WebDAVSyncService") { "Found remote sync file: $syncFileUrl" }
+            if (doesFileExist(syncFileUrl)) {
+                logcat(
+                    LogPriority.DEBUG,
+                    "WebDAVSyncService"
+                ) { "Found remote sync file: $syncFileUrl" }
 
                 // Read device ID from separate file
                 var deviceId = ""
-                if (sardine.exists(deviceIdFileUrl)) {
-                    deviceId = sardine.get(deviceIdFileUrl).bufferedReader().use { it.readText() }
-                    logcat(LogPriority.DEBUG, "WebDAVSyncService") { "Retrieved device ID: $deviceId" }
-                }
-
-                sardine.get(syncFileUrl).use { inputStream ->
-                    GZIPInputStream(inputStream).use { gzipInputStream ->
-                        val byteArray = gzipInputStream.readBytes()
-                        val backup = protoBuf.decodeFromByteArray(Backup.serializer(), byteArray)
-                        SyncData(deviceId = deviceId, backup = backup)
+                if (doesFileExist(deviceIdFileUrl)) {
+                    val deviceIdResponse = getOkHttpClient().newCall(GET(deviceIdFileUrl)).await()
+                    if (deviceIdResponse.isSuccessful) {
+                        deviceId = deviceIdResponse.body?.string() ?: ""
+                        logcat(
+                            LogPriority.DEBUG,
+                            "WebDAVSyncService"
+                        ) { "Retrieved device ID: $deviceId" }
                     }
                 }
+
+                val syncResponse = getOkHttpClient().newCall(GET(syncFileUrl)).await()
+                if (syncResponse.isSuccessful) {
+                    syncResponse.body?.byteStream()?.use { inputStream ->
+                        GZIPInputStream(inputStream).use { gzipInputStream ->
+                            val byteArray = gzipInputStream.readBytes()
+                            val backup =
+                                protoBuf.decodeFromByteArray(Backup.serializer(), byteArray)
+                            return SyncData(deviceId = deviceId, backup = backup)
+                        }
+                    }
+                }
+                throw Exception("Failed to download sync file")
             } else {
-                logcat(LogPriority.INFO, "WebDAVSyncService") { "Remote sync file not found: $syncFileUrl" }
+                logcat(
+                    LogPriority.INFO,
+                    "WebDAVSyncService"
+                ) { "Remote sync file not found: $syncFileUrl" }
                 null
             }
         } catch (e: Exception) {
-            logcat(LogPriority.ERROR,) { "Error downloading file from WebDAV" }
+            logcat(LogPriority.ERROR) { "Error downloading file from WebDAV: ${e.message}" }
             throw Exception("Failed to download sync data: ${e.message}", e)
         }
     }
 
-    private fun pushSyncData(syncData: SyncData) {
+    private suspend fun pushSyncData(syncData: SyncData) {
         val backup = syncData.backup ?: return
-        val sardine = getSardineClient()
         val baseUrl = syncPreferences.webDavServerUrl().get().trimEnd('/')
         val syncFileUrl = "$baseUrl/$remoteFileName"
         val deviceIdFileUrl = "$baseUrl/$deviceIdFileName"
 
+        if (baseUrl.isEmpty() || syncPreferences.webDavUsername().get()
+                .isEmpty() || syncPreferences.webDavPassword().get().isEmpty()
+        ) {
+            throw Exception(context.stringResource(SYMR.strings.webdav_not_configured))
+        }
+
         try {
+            val client = getOkHttpClient()
+
             // Upload device ID
             val deviceId = syncPreferences.uniqueDeviceID()
-            sardine.put(deviceIdFileUrl, deviceId.toByteArray(), "text/plain")
-            logcat(LogPriority.DEBUG, "WebDAVSyncService") { "Uploaded device ID: $deviceId" }
+            val deviceIdBody = deviceId.toRequestBody("text/plain".toMediaType())
+            val deviceIdRequest = PUT(deviceIdFileUrl, body = deviceIdBody)
+            val deviceIdResponse = client.newCall(deviceIdRequest).await()
+            if (deviceIdResponse.isSuccessful) {
+                logcat(LogPriority.DEBUG, "WebDAVSyncService") { "Uploaded device ID: $deviceId" }
+            } else {
+                throw Exception("Failed to upload device ID: ${deviceIdResponse.code}")
+            }
 
             // Upload sync data
             val byteArray = protoBuf.encodeToByteArray(Backup.serializer(), backup)
@@ -144,13 +213,21 @@ class WebDAVSyncService(context: Context, json: Json, syncPreferences: SyncPrefe
                     gzipOutputStream.write(byteArray)
                 }
                 val compressedData = baos.toByteArray()
-
-                sardine.put(syncFileUrl, compressedData, "application/octet-stream")
-                    logcat(LogPriority.DEBUG, "WebDAVSyncService") { "Successfully uploaded sync data to $syncFileUrl" }
+                val syncBody =
+                    compressedData.toRequestBody("application/octet-stream".toMediaType())
+                val syncRequest = PUT(syncFileUrl, body = syncBody)
+                val syncResponse = client.newCall(syncRequest).await()
+                if (syncResponse.isSuccessful) {
+                    logcat(
+                        LogPriority.DEBUG,
+                        "WebDAVSyncService"
+                    ) { "Successfully uploaded sync data to $syncFileUrl" }
+                } else {
+                    throw Exception("Failed to upload sync data: ${syncResponse.code}")
                 }
-
+            }
         } catch (e: Exception) {
-            logcat(LogPriority.ERROR,) { "Error uploading file to WebDAV" }
+            logcat(LogPriority.ERROR) { "Error uploading file to WebDAV: ${e.message}" }
             throw Exception("Failed to upload sync data: ${e.message}", e)
         }
     }
